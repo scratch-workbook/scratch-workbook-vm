@@ -1384,11 +1384,14 @@ class Runtime extends EventEmitter {
     /**
      * @returns {Array.<object>} scratch-blocks XML for each category of extension blocks, in category order.
      * @param {?Target} [target] - the active editing target (optional)
+     * @param {?object} [visibilities] - map of extension IDs to visibility (optional)
      * @property {string} id - the category / extension ID
      * @property {string} xml - the XML text for this category, starting with `<category>` and ending with `</category>`
      */
-    getBlocksXML (target) {
-        return this._blockInfo.map(categoryInfo => {
+    getBlocksXML (target, visibilities = {}) {
+        return this._blockInfo.filter(
+            categoryInfo => Object.keys(visibilities).includes(categoryInfo.id)
+        ).map(categoryInfo => {
             const {name, color1, color2} = categoryInfo;
             // Filter out blocks that aren't supposed to be shown on this target, as determined by the block info's
             // `hideFromPalette` and `filter` properties.
@@ -1401,8 +1404,10 @@ class Runtime extends EventEmitter {
                         target.isStage ? TargetType.STAGE : TargetType.SPRITE
                     );
                 }
+                let isVisibleBlock = visibilities[categoryInfo.id][block.info.opcode];
+
                 // If the block info's `hideFromPalette` is true, then filter out this block
-                return blockFilterIncludesTarget && !block.info.hideFromPalette;
+                return blockFilterIncludesTarget && !block.info.hideFromPalette && isVisibleBlock;
             });
 
             const colorXML = `colour="${color1}" secondaryColour="${color2}"`;
